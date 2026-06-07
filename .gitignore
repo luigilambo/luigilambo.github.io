@@ -2,3 +2,7 @@
 preview_*.png
 mirror_root/_edit/
 _*.png
+
+# rebrand backups — keep local, never commit/publish
+*.bak_rebrand
+*.orig

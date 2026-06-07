@@ -3,6 +3,10 @@
 > Mirror root: `/Users/luigilambo/Desktop/test/mirror/mirror_root/`
 > File doc/server: `/Users/luigilambo/Desktop/test/mirror/` (parent: `serve.py`, `README.md`)
 > Nota tecnica: `index.html` è minificato su una riga e il JSON-LD è **duplicato** (versione `<script>` resa + versione escape `\"` nel payload RSC). Ogni modifica al JSON-LD va applicata a **entrambe le copie**.
+>
+> ⚠️ **CRITICO — payload RSC con prefisso di lunghezza.** Dentro `index.html` il payload Next.js RSC (`self.__next_f.push([1,"…"])`) contiene righe di testo nel formato `id:T<hexlen>,<testo>` dove `<hexlen>` è la **lunghezza in BYTE** del testo. Le 2 righe T sono i JSON-LD Organization (`17:T…`) e ItemList (`18:T…`). **Se modifichi quel testo DEVI ricalcolare il prefisso hex**, altrimenti lo stream si desincronizza → `TypeError: enqueueModel is not a function` → pagina "This page couldn't load". (Vedi fix datato sotto.)
+>
+> ⚠️ **Le stringhe brand NON sono solo in `index.html` + `09d2g3rtnbzgs.js`.** Alcune vivono nei chunk dei componenti: `12vmxu4i7-3qm.js` (nav: "Shader — Home", aria-label) e `0nr6lqdt2xw72.js` (easter-egg). Devono combaciare **esattamente** col testo SSR di `index.html`, altrimenti **hydration mismatch** (React #418). Il valore `city`/indirizzo nel bundle deve combaciare col testo visibile SSR.
 
 ---
 
@@ -64,7 +68,7 @@
 
 | Cosa cambiare | Dove (file) | Valore attuale | Azione consigliata | Diff. |
 |---|---|---|---|---|
-| Boot screen CRT desktop | `mirror_root/textures/boot_screen.png` (720x404) | Disco + wordmark "SHADER", testo "Shader Development Studio, Website / Version 1.02" e "Copyright (c) Shader Development Studio AB, 2026. All Rights Reserved." | Ricreare il PNG: logo bzn15 + sostituire tutte le stringhe "Shader Development Studio"/copyright | 🟡 |
+| Boot screen CRT desktop | `mirror_root/textures/boot_screen.png` (720x404) | Disco + wordmark "SHADER", testo "Shader Development Studio, Website / Version 1.02" e "Copyright (c) Shader Development Studio AB, 2026. All Rights Reserved." | **✅ FATTO (2026-06-07)** — sostituito con la versione BZN15 (1672×941, da `nuove_immagini/Branding/boot_screen.png`); originale Shader in `boot_screen.png.bak_rebrand`. Refuso "All Right" → **corretto** in "All Rights Reserved". | ✅ |
 | Boot screen CRT mobile | `mirror_root/textures/boot_screen_mobile.png` (360x274) | Disco + wordmark "SHADER", "Shader Development Studio / Version 1.02", "Copyright (c) Shader Sweden AB, 2026…" | Ricreare il PNG con logo/testo bzn15 | 🟡 |
 | Footer copyright lockup | `mirror_root/textures/copyright_footer.png` (1032x288, bianco su trasparente) | Disco + wordmark "SHADER", tagline "A High Tech Business Solutions Company", "© Shader Sweden AB. All Rights Reserved." | Ricreare PNG con logo bzn15, tagline opzionale, "© bzn15…". Mantenere bianco-su-trasparente per il footer scuro | 🟡 |
 
@@ -87,11 +91,12 @@
 
 | Cosa cambiare | Dove (file) | Valore attuale | Azione consigliata | Diff. |
 |---|---|---|---|---|
-| Jacob (presenting) | `mirror_root/textures/jacob_presenting.webp` | Foto reale (91 KB) | Sostituire con foto team bzn15 | 🟡 |
-| Simon (presenting) | `mirror_root/textures/simon_presenting.webp` | Foto reale (76 KB). ⚠️ È l'owner del Cal.com `simon-hedlund-kglzne` (vedi §2) | Sostituire con foto team bzn15 | 🟡 |
+| Jacob (presenting) | `mirror_root/textures/jacob_presenting.webp` | Foto reale (91 KB) | **✅ FATTO (2026-06-08)**: nuovo ritaglio team BZN15 (1007×1562), PNG→WebP **con trasparenza preservata**. Originale in `.bak_rebrand`. | ✅ |
+| Simon (presenting) | `mirror_root/textures/simon_presenting.webp` | Foto reale (76 KB). ⚠️ È l'owner del Cal.com `simon-hedlund-kglzne` (vedi §2) | **✅ FATTO (2026-06-08)**: nuovo ritaglio team BZN15 (1008×1560), PNG→WebP **con trasparenza preservata**. Originale in `.bak_rebrand`. | ✅ |
 | Simon (calling) | `mirror_root/textures/simon_calling.webp` | Foto reale (44 KB) | Sostituire con foto team bzn15 | 🟡 |
 | Filip (footer) | `mirror_root/textures/filip_footer_5.webp` | Foto reale (101 KB) | Sostituire con foto team bzn15 | 🟡 |
 | Jake (at computer) | `mirror_root/textures/jake_computer.webp` | Foto reale (46 KB) | Sostituire con foto team bzn15 | 🟡 |
+| 🆕 **Foto di gruppo** (coppia responsive) — *non nel brief originale* | `mirror_root/textures/group_3x2.webp` (2500×1677, finestre larghe) **+** `group_1x1.webp` (1677×1677, finestre strette) | 3 uomini Shader dietro due CRT | **✅ FATTO (2026-06-08)**: nuova foto team BZN15 (2 persone, fondo azzurro brand), convertita PNG→WebP. Il codice sceglie `1x1` vs `3x2` in base all'aspect ratio (`u<1.3`). ⚠️ `group_1x1.webp` **non esisteva** (404, mai mirrorata) → **creata**. Backup 3x2 in `.bak_rebrand`. | ✅ |
 | Simon (footer) — 6ª foto extra | `mirror_root/textures/simon_footer.webp` | Stesso Simon, variante footer (36 KB). ⚠️ Il file è in realtà HTML/testo con estensione errata e contiene markup brand duplicato; **non è referenziato** da alcun HTML/JS live (non servito) | Non servito → non bloccante. Sostituire/rimuovere per completezza ed evitare stringhe brand stantie se mai esposto | 🟡 |
 
 ---
@@ -105,6 +110,7 @@
 | Video progetti — playlist HLS locali (53 file) | `mirror_root/mux/*.m3u8` (referenziati dai `mux_playback_id` in index.html) | 53 playlist Mux = video client/showreel reali Shader (hero + gallery degli 11 progetti; alcuni ID ripetuti). Es. `Y7HzOsrmhjd7M00Ib6JYF861ME00I3ZqicLcr4V9vhoXU.m3u8` = eHealth Arena hero | Sostituire tutti i 53 asset con footage bzn15 e ri-puntare i `mux_playback_id` in index.html. Sono deliverable client reali: non possono uscire sotto rebrand | 🔴 |
 | Decals logo "SHADER" sui telefoni 3D (3 istanze) | `mirror_root/models/phones.glb` — image idx 2 `shader-logo` (webp 1024x290), material `shader-logo`, nodi `phone-1/2/3-logo` | Disco + wordmark "SHADER" come decal su 3 telefoni | Sostituire la webp embedded con decal bzn15 e ri-pacchettizzare (una texture guida tutti e 3) | 🔴 |
 | Decal logo "SHREDDER" stile-Shader | `mirror_root/models/shredder.glb` — image idx 1 `shredder-logo` (webp 1024x290), material `shader-logo`, nodo `cogs` | Disco + wordmark "SHREDDER" nello stile esatto del brand Shader | Ri-autorare la webp nello stile bzn15 (o rilavorare il disco così da non leggersi come mark Shader) e ri-pacchettizzare | 🔴 |
+| 🆕 **Thumbnail fallback** brandizzata — *non nel brief originale* | `mirror_root/textures/thumb_fallback.png` (400×300) | Disco rigato + wordmark "SHADER" su fondo crema (placeholder thumbnail dei video) | Ricreare con marchio bzn15 (o thumb neutra) | 🟡 |
 
 ---
 
@@ -136,3 +142,50 @@
 5. **Portfolio: dataset + URL `/work/` + 53 video Mux** (§7) — 🔴 lavoro client reale; non deve uscire sotto rebrand (priorità legale alta anche se sforzo alto).
 6. **Texture nei GLB** computer / phones / shredder (§5, §7) — 🔴 ultimi, richiedono unpack/repack GLB (Draco + EXT_texture_webp).
 7. **Doc server/README** (§8) — 🟢 last, solo interno/non user-facing.
+
+---
+
+## Aggiornamento audit immagini — 2026-06-07
+
+> Audit visivo completo: aperte **tutte** le immagini su disco (46 raster/SVG) + estratte e ispezionate le texture embedded dei **7 GLB**. Classificati ~64 asset come SOSTITUIRE / TENERE.
+
+### Stato avanzamento
+- ✅ **`textures/boot_screen.png`** (desktop) sostituito con la versione **BZN15** (vedi §4). ⚠️ refuso nel PNG: *"All **Right** Reserved"* (manca la "s").
+
+### 🆕 Nuovi findings (NON presenti nel brief originale)
+- **`textures/thumb_fallback.png`** (400×300) — wordmark "SHADER" + disco rigato (placeholder thumbnail). → aggiunto a §7.
+- **`textures/group_3x2.webp`** (2500×1677) — foto di gruppo con 3 persone identificabili. → aggiunto a §6.
+- **`_edit/commodore-shader.png`** (86 KB) e **`_edit/commodore-shader.webp`** (14 KB) — copie estratte/editabili della texture schermo di `computer.glb` (contengono "SHADER"). **Orfane** (non servite dal sito) ma con marchio: sostituire o rimuovere.
+
+### Conferme / precisazioni
+- ✅ **Logo wordmark — VERIFICATO (2026-06-07)**: i due file serviti `_next/static/media/logo.0ctv.ko5~mr~7.svg` e `logo_dark.0a~p9g3zi7_h6.svg` sono **già BZN15** (sostituzione riuscita; confermato via rendering reale). L'alert precedente "ancora SHADER" era un **falso positivo** dell'agente che non rasterizzava l'SVG e leggeva male le path.
+- ✅ **Favicon / app-icon — FATTO (2026-06-07)**: sostituito `icon.svg` (era il disco arcobaleno Shader) con il **monogramma BZN15 adattivo** (navy `#132c4f` su tema chiaro, panna `#e8e3da` su tema scuro via `prefers-color-scheme`). Generati e installati anche i due binari prima **assenti**: `favicon.ico` (multi-size 16→256, PNG-in-ICO) e `apple-icon.png` (180×180, mattonella navy + monogramma panna). Sorgenti in `nuove_immagini/Branding/generated/`; originale Shader in `icon.svg.bak_rebrand`. (§3)
+- **`textures/simon_footer.webp`**: confermato — **non è un'immagine**, è una pagina **HTML 404 di Shader** con estensione `.webp` errata, **orfana** (non referenziata da alcun file live). Rimuovere (§6).
+- **`computer.glb`** (§5): 4 texture embedded; **solo `#2 commodore-shader`** (material `commodore-logo`, nodo `logo`) è brand → SOSTITUIRE. Le altre si **tengono**: `#0 computer_d` (diffuse), `#1 keyboard-simple` (tastiera Commodore 64 reale, badge terzi), `#3 background_compressed` (sfondo).
+- **Binari referenziati ma ASSENTI su disco**, da creare con marchio bzn15: `/favicon.ico` e `/apple-icon.png` (in `<head>`), `dark-colored.png` (JSON-LD `logo`), OG image Prismic (remota). (§3)
+
+### ✅ Verificate e da NON toccare (nessun marchio Shader)
+- **Texture GLB generiche**: phones.glb `#0/#1/#3`, shredder.glb `#0`, e i modelli `bank.glb` / `deskbox.glb` / `tie.glb` / `trophy2.glb` (`bank` e `tie` senza alcuna texture).
+- **Render/foto generici**: `computer.webp` (retrocomputer + grafico campione), `trophy2.webp`, `accessibility_statement.webp`, `videos/prebaked/handshake_avif/*` (solo mani, niente volti).
+- **Loghi terzi / badge**: `customers_logo_cloud.png` (ICA, Pepsi, RISE…), `footer_certificate.png` (globo generico), `a11y-statement.png`, badge "commodore 64".
+- **Tecniche / UI**: atlanti font `fonts/stix_*`, `bank_*`, `dirt`/`grunge`/`smoke`/`rgba_noise`, bordi `dashed_*`, `scissors`, `spinner`, icone in `textures/icons/`.
+
+---
+
+## Fix "sito non si carica" — 2026-06-07
+
+> Dopo il rebrand testuale §1/§2/§8 la pagina mostrava **"This page couldn't load"** (error-boundary Next.js). Causa e fix, verificati servendo il sito (`serve.py`, porta **8300**) e ispezionando la console con un browser reale.
+
+**Causa 1 — stream RSC desincronizzato (fatale).** Le sostituzioni avevano cambiato il testo delle 2 righe `T` length-prefixed del payload RSC senza aggiornarne il prefisso byte → `TypeError: t.reason.enqueueModel is not a function`.
+- Fix: ricalcolate le lunghezze → riga 17 (Organization) `0x4f8`→`0x4b5`, riga 18 (ItemList) `0x517`→`0x50b`.
+
+**Causa 2 — hydration mismatch (React #418).** Stringhe brand presenti anche in chunk JS non editati, che renderizzavano "Shader" lato client mentre l'SSR diceva "BZN15":
+- `12vmxu4i7-3qm.js` (nav): 8 stringhe `Shader` → `BZN15` (`Shader — Home`, `Shader logo, go to home page`, `Book a call with Shader`, `Shader on LinkedIn/Instagram/X`).
+- `0nr6lqdt2xw72.js`: easter-egg "Why **Shader** Will Never Win an Award / At **Shader**… / **Shader** wins FWA…" → BZN15 (le ~250 altre `Shader` sono **tecniche** WebGL/THREE.js: `vertexShader`, `createShader`, `ShaderMaterial`… → lasciate).
+- Indirizzo: il testo visibile SSR `Bari (BA)` non combaciava con `bundle.city = "Bari"` → allineato a **`Bari`** ovunque (SSR + bundle + JSON-LD).
+
+**Esito:** pagina che carica e renderizza correttamente; console pulita (restano solo 2 warning preesistenti e innocui: deprecazione `THREE.Clock` e autoplay video). Backup di tutti i file toccati in `*.bak_rebrand`.
+
+> 💡 **Preview / cache:** `serve.py` (porta 8300) ora invia `Cache-Control: no-cache, no-store` (aggiunto all'override `end_headers` esistente) così le immagini sostituite si vedono al reload. Se il browser ha ancora una copia vecchia in cache, basta **un** hard-refresh (`Cmd+Shift+R`); dopo riavvii del server, ricaricare la pagina.
+
+> ⚠️ **Ancora da fare nei chunk JS** (per il portfolio §7, quando lo si rebranda): in `0nr6lqdt2xw72.js` resta `Norrköping` ×4 (nomi client *Norrköpings Symfoniorkester/Hamn*) — i dati progetti sono duplicati anche qui, oltre che in `index.html`.

@@ -1,0 +1,47 @@
+name: Deploy to GitHub Pages
+
+# Publishes the static mirror in ./mirror_root to GitHub Pages.
+# Requirements (one-time, in repo Settings → Pages):
+#   - Source: "GitHub Actions"
+#   - Custom domain: bzn15.it  (the CNAME file in mirror_root sets this too)
+# DNS for bzn15.it must point to GitHub Pages (apex A/AAAA records + www CNAME).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; don't cancel an in-progress production deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Strip backup/original files from the publish dir
+        run: find mirror_root -type f \( -name '*.bak_rebrand' -o -name '*.orig' \) -delete
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact (mirror_root)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./mirror_root
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

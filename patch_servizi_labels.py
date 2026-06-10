@@ -61,6 +61,12 @@ PATCHES = [
     ("0nr6lqdt2xw72.js",
      'let w=E?.title==="Norrköpings Symfoniorkester"&&v.width<512?"Norrköpings Symfoni- orkester":E?.title;f[11]!==w?(l=(0,ec.jsx)(wG,{fontSize:60,lineHeight:"60px",md:s,marginTop:32,fontWeight:"medium",lg:o,textAlign:"center",children:w})',
      'let w=E?.title;f[11]!==w?(l=(0,ec.jsx)(wG,{fontSize:E?.title==="Reti e Telecomunicazioni"&&v.width<512?Math.round(v.width/10.5):60,lineHeight:E?.title==="Reti e Telecomunicazioni"&&v.width<512?Math.round(v.width/10.5)+2+"px":"60px",md:s,marginTop:32,fontWeight:"medium",lg:o,textAlign:"center",children:w})'),
+    # 5. "Affare fatto." (canvas, sezione contatti): virgolette tipografiche
+    #    (l'atlas STIX ha i glifi U+201C/201D, NON le caporali «»); corpi
+    #    ORIGINALI 80/100/140/200 — l'utente preferisce grande con l'a-capo
+    ("0nr6lqdt2xw72.js",
+     'children:"Affare fatto."',
+     'children:"“Affare fatto.”"'),
 ]
 
 def main():

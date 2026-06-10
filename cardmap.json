@@ -1,0 +1,68 @@
+{
+ "ehealth-arena": {
+  "title": "Cybersecurity",
+  "sub": "Difesa h24",
+  "host": "ehealtharena.se",
+  "desc": "Teniamo d'occhio le vostre reti, applicazioni e infrastrutture mentre voi lavorate, con un presidio continuo che rileva, analizza e ferma le minacce prima che diventino un problema. Operiamo come centro di gestione della sicurezza secondo il modello SOC, con monitoraggio costante, correlazione via SIEM, risposta agli incidenti e tutela dei dati. La sicurezza non è un prodotto da installare. È un presidio che non dorme mai."
+ },
+ "select-concept": {
+  "title": "Governance, rischio e conformità",
+  "sub": "Conformità e rischio",
+  "host": "selectconcept.com",
+  "desc": "La sicurezza vive di regole, non solo di tecnologia. Vi aiutiamo a leggere e rispettare gli obblighi che vi riguardano davvero, da GDPR a NIS2 fino alle linee guida AgID, nel solco della ISO/IEC 27001. Valutiamo il rischio, applichiamo le misure concrete, documentiamo ogni scelta."
+ },
+ "gamily": {
+  "title": "Infrastrutture e Cloud",
+  "sub": "Infrastruttura",
+  "host": "gamilyapp.com",
+  "desc": "Progettiamo, realizziamo e gestiamo i sistemi che fanno funzionare la vostra organizzazione, dall'hardware fisico al cloud. Scegliamo la soluzione giusta per voi, non quella più di moda. Costruiamo architetture in cloud, on-premise o ibride, dimensionate sul carico reale e integrate con i sistemi esistenti, pensate per crescere senza ricominciare da capo."
+ },
+ "alamance-foods": {
+  "title": "Sviluppo software e SaaS",
+  "sub": "Applicazioni su misura",
+  "host": "alamancefoods.com",
+  "desc": "Quando il software già pronto non basta, lo costruiamo su misura. Sviluppiamo applicazioni gestionali, piattaforme web e servizi in modalità SaaS, ritagliati sui vostri processi reali e non su un modello preconfezionato. Curiamo anche manutenzione e assistenza, perché un software che nessuno cura invecchia in fretta."
+ },
+ "son": {
+  "title": "Reti e Telecomunicazioni",
+  "sub": "Connettività TLC",
+  "host": "norrkopingssymfoniorkester.se",
+  "desc": "Una buona infrastruttura comincia dalla connessione. Installiamo e gestiamo reti pubbliche e private, fisse, mobili e satellitari, insieme alle postazioni di lavoro che vi si collegano. Curiamo l'intera catena, dalla progettazione alla manutenzione, e facciamo da intermediari per i servizi TLC che vi servono."
+ },
+ "glasbolaget": {
+  "title": "Gestione di sistemi e applicazioni",
+  "sub": "Gestione continua",
+  "host": "glasbolaget-configurator.vercel.app",
+  "desc": "Gestiamo sistemi e applicazioni al posto vostro: aggiornamenti, monitoraggio, coordinamento dei progetti e verifica dei contratti di servizio, ogni giorno. Voi pensate al lavoro, al resto pensiamo noi."
+ },
+ "spp-dream-generator": {
+  "title": "Impiantistica tecnologica",
+  "sub": "Impianti e building",
+  "host": "retirement-dream-generator.se",
+  "desc": "La tecnologia parte sempre dal mondo fisico, non dallo schermo. Realizziamo impianti elettrici, elettronici, tecnologici, di sicurezza e di telecomunicazione per edifici civili, siti industriali e Pubbliche Amministrazioni. Progettiamo, installiamo e curiamo la manutenzione nel tempo, così l'impianto resta efficiente e a norma anche fra qualche anno."
+ },
+ "ica-nissen": {
+  "title": "Formazione e Consulenza",
+  "sub": "Competenze interne",
+  "host": null,
+  "desc": "Trasferiamo competenza, non soltanto soluzioni. Offriamo consulenza e formazione su informatica, telecomunicazioni e cybersicurezza, perché la sicurezza migliore è quella che sapete usare da soli."
+ },
+ "norrkopings-hamn": {
+  "title": "Identità digitali e tutela dei dati",
+  "sub": "Identità e dati",
+  "host": "visual-of-sweden.vercel.app",
+  "desc": "Chi può accedere a cosa, e con quali diritti. Gestiamo identità digitali, autenticazione e profili di accesso, e proteggiamo i dati personali lungo tutto il loro ciclo di vita. Meno chiavi in giro, meno rischi."
+ },
+ "heip": {
+  "title": "Fornitura e noleggio",
+  "sub": "Hardware e licenze",
+  "host": "heip-vis.vercel.app",
+  "desc": "Forniamo e noleggiamo hardware, software e licenze, dai singoli dispositivi ai sistemi completi. Scegliamo, configuriamo e consegniamo. Voi trovate tutto pronto all'uso."
+ },
+ "design-is-funny": {
+  "title": "Project management e PMO",
+  "sub": "Coordinamento progetti",
+  "host": "designisfunny.co",
+  "desc": "Un progetto tecnologico vive di coordinamento. Pianifichiamo attività, tempi e fornitori, teniamo allineati i team e monitoriamo l'avanzamento, così le cose arrivano davvero in fondo. Senza sorprese dell'ultimo minuto."
+ }
+}

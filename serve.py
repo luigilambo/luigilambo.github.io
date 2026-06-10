@@ -72,8 +72,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def end_headers(self):
         self.send_header("Access-Control-Allow-Origin", "*")
-        # local dev mirror: never cache, so swapped assets show up on reload
-        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        # dev mirror: revalidate normal assets so swapped files show on reload,
+        # but let video/media cache normally — `no-store` breaks HLS playback
+        # (MediaSource / native <video> can't buffer/seek a non-stored stream).
+        p = urllib.parse.urlparse(self.path).path.lower()
+        if p.endswith((".m3u8", ".ts", ".mp4", ".webm", ".m4s", ".mov", ".m4a", ".aac")):
+            self.send_header("Cache-Control", "public, max-age=86400")
+        else:
+            self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
     def log_message(self, *a):

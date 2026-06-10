@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Strip backup/original files from the publish dir
-        run: find mirror_root -type f \( -name '*.bak_rebrand' -o -name '*.orig' \) -delete
+        run: find mirror_root -type f \( -name '*.bak*' -o -name '*.orig' -o -name '*.rej' -o -name '* copia*' -o -name '* copy*' -o -name '.DS_Store' \) -delete
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

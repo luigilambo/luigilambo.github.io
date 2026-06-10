@@ -3,6 +3,14 @@ preview_*.png
 mirror_root/_edit/
 _*.png
 
-# rebrand backups — keep local, never commit/publish
-*.bak_rebrand
+# rebrand backups & build cruft — keep local, never commit/publish
+__pycache__/
+*.py[cod]
+*.bak
+*.bak_*
 *.orig
+*.rej
+*~
+*.tmp
+* copia*
+* copy*

@@ -38,6 +38,29 @@ PATCHES = [
     ("12vmxu4i7-3qm.js",  'children:"Next Project"', 'children:"Prossimo servizio"'),
     ("12vmxu4i7-3qm.js",  '`Continue to next project: ${', '`Continua al prossimo servizio: ${'),
     ("12vmxu4i7-3qm.js",  'children:"Continue"', 'children:"Continua"'),
+    #    coupon "Prenota una call" (canvas, solo client)
+    ("0nr6lqdt2xw72.js",  'children:"Or click below."', 'children:"Oppure clicca qui."'),
+    #    destinazione dei bottoni "Prenota una call" e del link nav Contatti:
+    #    "#contatti" non esiste nella mappa sezione->hash (la sezione e'
+    #    "#contact", vedi 09d2g) -> il click non scrollava da nessuna parte.
+    #    Config unica (links.bookACall) + anchor a11y; il DOM SSR della home
+    #    e' allineato da update_home.py.
+    ("09d2g3rtnbzgs.js",  'bookACall:"#contatti"', 'bookACall:"#contact"'),
+    ("12vmxu4i7-3qm.js",  'href:"#contatti"', 'href:"#contact"'),
+    #    i bottoni canvas (Mi=coupon, HZ=navbar) aprivano bookACall in un
+    #    NUOVO TAB (retaggio del link esterno cal.com di shader): ora che la
+    #    destinazione e' interna si delega il click all'anchor a11y del nav,
+    #    che scrolla in-page via store (preventDefault + w("contact")).
+    ("0nr6lqdt2xw72.js",
+     'window.open(w6.links.bookACall,"_blank","noopener")',
+     'document.querySelector(\'a[aria-label="Vai alla sezione Contatti"]\')?.click()'),
+    #    e niente piu' _blank sugli anchor a11y "Prenota una call"
+    ("12vmxu4i7-3qm.js",
+     'target:"_blank",rel:"noopener noreferrer","aria-label":"Prenota una call"',
+     '"aria-label":"Prenota una call"'),
+    ("0671of7zsd06h.js",
+     'target:"_blank",rel:"noopener noreferrer","aria-label":"Prenota una call"',
+     '"aria-label":"Prenota una call"'),
     # 4. tipografia mobile (fase 6) — i titoli shader erano corti ("Gamily"),
     #    quelli BZN15 no: "Telecomunicazioni" a fontSize fisso 180 sborda dal
     #    viewport sotto i 1024px (v = viewport store, gia' in scope nella riga)
@@ -62,11 +85,21 @@ PATCHES = [
      'let w=E?.title==="Norrköpings Symfoniorkester"&&v.width<512?"Norrköpings Symfoni- orkester":E?.title;f[11]!==w?(l=(0,ec.jsx)(wG,{fontSize:60,lineHeight:"60px",md:s,marginTop:32,fontWeight:"medium",lg:o,textAlign:"center",children:w})',
      'let w=E?.title;f[11]!==w?(l=(0,ec.jsx)(wG,{fontSize:E?.title==="Reti e Telecomunicazioni"&&v.width<512?Math.round(v.width/10.5):60,lineHeight:E?.title==="Reti e Telecomunicazioni"&&v.width<512?Math.round(v.width/10.5)+2+"px":"60px",md:s,marginTop:32,fontWeight:"medium",lg:o,textAlign:"center",children:w})'),
     # 5. "Affare fatto." (canvas, sezione contatti): virgolette tipografiche
-    #    (l'atlas STIX ha i glifi U+201C/201D, NON le caporali «»); corpi
-    #    ORIGINALI 80/100/140/200 — l'utente preferisce grande con l'a-capo
+    #    (l'atlas STIX ha U+201C/201D, NON le caporali «»); corpi ORIGINALI
+    #    80/100/140/200 (l'utente preferisce grande con l'a-capo). Quando va
+    #    a capo (<1530px) le virgolette sbilanciano le righe centrate → DUE
+    #    wG espliciti con padding compensativo = larghezza virgoletta
+    #    (misurata ~0.6em → 48/60/84/120 per breakpoint) sul lato opposto:
+    #    le PAROLE restano in asse, le virgolette "appese" fuori asse.
+    #    NB: spazi in coda riga vengono trimmati dall'engine e i glifi
+    #    mancanti (NBSP ecc.) renderizzano tofu → solo il padding funziona.
+    #    `d` = viewport store, in scope nella funzione.
     ("0nr6lqdt2xw72.js",
-     'children:"Affare fatto."',
-     'children:"“Affare fatto.”"'),
+     '(0,ec.jsx)(wG,{fontSize:80,sm:{fontSize:100},md:{fontSize:140},lg:{fontSize:200},textAlign:"center",fontWeight:"medium",zIndex:4,renderOrder:1001,children:"Affare fatto."})',
+     'd.width<1530?(0,ec.jsxs)(wQ,{flexDirection:"column",width:"100%",children:['
+     '(0,ec.jsx)(wG,{fontSize:80,paddingRight:48,sm:{fontSize:100,paddingRight:60},md:{fontSize:140,paddingRight:84},lg:{fontSize:200,paddingRight:120},textAlign:"center",fontWeight:"medium",zIndex:4,renderOrder:1001,children:"“Affare"}),'
+     '(0,ec.jsx)(wG,{fontSize:80,paddingLeft:48,sm:{fontSize:100,paddingLeft:60},md:{fontSize:140,paddingLeft:84},lg:{fontSize:200,paddingLeft:120},textAlign:"center",fontWeight:"medium",zIndex:4,renderOrder:1001,children:"fatto.”"})'
+     ']}):(0,ec.jsx)(wG,{fontSize:80,sm:{fontSize:100},md:{fontSize:140},lg:{fontSize:200},textAlign:"center",fontWeight:"medium",zIndex:4,renderOrder:1001,children:"“Affare fatto.”"})'),
 ]
 
 def main():

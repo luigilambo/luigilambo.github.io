@@ -50,6 +50,13 @@ def main():
     repls.append(("re", r'(\\*)"project_media\1":\[[^\]]*,[^\]]*\]',
                         r'\g<1>"project_media\g<1>":[]'))
     repls.append(("re", r'/work(?=[/\\"])', "/servizi"))
+    # anchor SSR a11y (nav Contatti + 2x Prenota una call): "#contatti" non
+    # esiste nella mappa sezione->hash, la sezione e' "#contact" (coerente
+    # coi chunk patchati da patch_servizi_labels); e niente _blank su un
+    # anchor ormai interno
+    repls.append(("lit", 'href="#contatti"', 'href="#contact"'))
+    repls.append(("lit", 'target="_blank" rel="noopener noreferrer" aria-label="Prenota una call"',
+                         'aria-label="Prenota una call"'))
 
     bstart, bend, buf = rw.split_flight(html)
     pre = rw.apply_repls(html[:bstart], repls)

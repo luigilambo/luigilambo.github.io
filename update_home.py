@@ -30,18 +30,35 @@ def main():
     repls = [("fn", rw.fix_itemlist)]
     for slug in rw.KEEP:
         c = rw.CARDMAP[slug]
+        # uid/url possono essere ancora shader (prima esecuzione) o gia' BZN15
+        # (riesecuzioni dopo la rinomina slug): match su entrambe le forme
         repls.append(("re",
-            r'("uid":"' + slug + r'","url":"/work/' + slug + r'","title":")[^"]*(","subtitle":")[^"]*(")',
+            r'("uid":"(?:' + slug + r'|' + rw.SLUG[slug] + r')","url":"[^"]*","title":")[^"]*(","subtitle":")[^"]*(")',
             r"\g<1>" + c["title"] + r"\g<2>\g<3>"))
+    # slug shader -> slug BZN15 (stesse due forme di rebrand_work.build_repls;
+    # vanno DOPO fix_itemlist, che indicizza cardmap coi vecchi slug)
+    for sl in rw.KEEP:
+        repls.append(("lit", "/work/" + sl, "/work/" + rw.SLUG[sl]))
+        repls.append(("re", r'(\\*)"' + re.escape(sl) + r'\1"',
+                            r'\g<1>"' + rw.SLUG[sl] + r'\g<1>"'))
+    # fase /servizi: media delle card -> il video del servizio stesso (riusa il
+    # mux_playback_id dell'oggetto via backreference, vedi rebrand_work), poi
+    # route nuova (ULTIMA, riscrive anche gli url rinominati dagli slug sopra)
+    repls.append(("re", r'(\\*)"mux_playback_id\1":\1"([A-Za-z0-9]+)\1"([^\[\]{}]*?)"project_media\1":\[[^\]]*\]',
+                        r'\g<1>"mux_playback_id\g<1>":\g<1>"\g<2>\g<1>"\g<3>'
+                        r'"project_media\g<1>":[{\g<1>"mux_playback_id\g<1>":\g<1>"\g<2>\g<1>"}]'))
+    repls.append(("re", r'(\\*)"project_media\1":\[[^\]]*,[^\]]*\]',
+                        r'\g<1>"project_media\g<1>":[]'))
+    repls.append(("re", r'/work(?=[/\\"])', "/servizi"))
 
     bstart, bend, buf = rw.split_flight(html)
     pre = rw.apply_repls(html[:bstart], repls)
-    buf = rw.edit_buffer(buf, repls)
+    buf = rw.reorder_projects(rw.edit_buffer(buf, repls))
     open(p, "w", encoding="utf-8").write(rw.emit(pre, buf, html[bend:]))
 
     for slug in rw.KEEP:
-        m = re.search(r'"uid":"' + slug + r'","url":"[^"]*","title":"([^"]*)","subtitle":"([^"]*)"', buf)
-        print(f'  {slug:22} title={m.group(1)!r} subtitle={m.group(2)!r}')
+        m = re.search(r'"uid":"' + rw.SLUG[slug] + r'","url":"([^"]*)","title":"([^"]*)","subtitle":"([^"]*)"', buf)
+        print(f'  {rw.SLUG[slug]:36} url={m.group(1)!r} title={m.group(2)!r} subtitle={m.group(3)!r}')
     n = re.search(r'"numberOfItems":(\d+)', buf)
     print(f'  ItemList numberOfItems={n.group(1)}')
 

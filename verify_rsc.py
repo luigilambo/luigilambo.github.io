@@ -24,6 +24,9 @@ TROW_RE = re.compile(r'\n([0-9a-f]+):T([0-9a-f]+),')
 FORBIDDEN = [
     "127.0.0.1", "shader.se", "shadersweden", "Shader", "prismic.io",
     "5593233140", "Norrk", "cal.com", "Cruitive", "thefwa.com",
+    # fase /servizi: route vecchia, hash vecchio, mux remoto, testi EN detail
+    "/work/", "selected-work", "stream.mux.com", "Next Project",
+    "Continue to next project",
 ]
 
 def flight_buf(html):
@@ -66,7 +69,7 @@ def main(argv):
             files.extend(sorted(glob.glob(a)))
     else:
         files = [os.path.join(ROOT, "index.html")] + sorted(
-            glob.glob(os.path.join(ROOT, "work", "*", "index.html")))
+            glob.glob(os.path.join(ROOT, "servizi", "*", "index.html")))
     total_err = 0
     for f in files:
         html = open(f, encoding="utf-8").read()

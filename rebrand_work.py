@@ -40,6 +40,14 @@ KEEP = ["ehealth-arena", "select-concept", "gamily", "alamance-foods",
         "son", "glasbolaget", "spp-dream-generator", "ica-nissen"]
 REMOVE = ["norrkopings-hamn", "heip", "design-is-funny"]
 
+# slug shader -> slug BZN15 (da cardmap). KEEP resta indicizzato sui vecchi slug
+# (sono le chiavi di cardmap e il contenuto degli .orig); le DIRECTORY su disco
+# e ogni occorrenza servita (url, uid, router state, JSON-LD) usano il nuovo.
+SLUG = {s: CARDMAP[s]["slug"] for s in KEEP}
+
+def page_dir(slug):
+    return os.path.join(ROOT, "servizi", SLUG[slug])
+
 PUSH_RE = re.compile(r'<script>self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)</script>')
 TROW_RE = re.compile(r'\n([0-9a-f]+):T([0-9a-f]+),')
 
@@ -109,7 +117,7 @@ def drop_obj(buf, slug):
             buf = buf[:st] + buf[en:]
 
 # ---------- ItemList JSON-LD fixer (works on DOM scripts and T-row text) ----------
-ITEMLIST_RE = re.compile(r'\{"@id":"[^"]*/work","@context":"https://schema\.org","@type":"ItemList"')
+ITEMLIST_RE = re.compile(r'\{"@id":"https?://[^"]*","@context":"https://schema\.org","@type":"ItemList"')
 
 def fix_itemlist(text):
     """Drop the 3 removed projects, renumber, relabel names by slug (BZN15)."""
@@ -124,8 +132,12 @@ def fix_itemlist(text):
                 continue
             if slug in CARDMAP:
                 it["name"] = CARDMAP[slug]["title"]
-            it["position"] = len(items) + 1
             items.append(it)
+        # ordine canonico del carosello (RANK accetta slug vecchi e nuovi)
+        items.sort(key=lambda it: RANK.get(
+            it.get("url", "").rstrip("/").rsplit("/", 1)[-1], 99))
+        for n, it in enumerate(items):
+            it["position"] = n + 1
         d["itemListElement"] = items
         d["numberOfItems"] = len(items)
         out.append(text[i:st])
@@ -147,7 +159,7 @@ def extract_old(orig):
 def old_titles():
     t = {}
     for slug in KEEP:
-        orig = open(os.path.join(ROOT, "work", slug, "index.html.orig"), encoding="utf-8").read()
+        orig = open(os.path.join(page_dir(slug), "index.html.orig"), encoding="utf-8").read()
         t[slug] = re.search(r"<h1>(.*?)</h1>", orig).group(1)
     return t
 
@@ -211,13 +223,15 @@ def build_repls(slug, old_title, dom_raw, d_start, d_end, oldmap, next_slug):
                      '"site_link":{"link_type":"Any"}'))
     # a11y "Visit site" anchor in the DOM
     R.append(("re", r'<a target="_blank" rel="noopener noreferrer" aria-label="Visit [^"]*" href="[^"]*">Visit site</a>', ""))
-    # a11y Next Project block: new title, no subtitle <p>, rerouted href
+    # a11y Next Project block: titolo nuovo, no subtitle <p>, href reroutato e
+    # testi IT — DEVONO combaciare coi chunk patchati da patch_servizi_labels.py
+    # (h2/aria/children identici, o l'idratazione fallisce con #418)
     nx = CARDMAP[next_slug]["title"]
     # the subtitle <p> may contain an SSR text-node separator: <p>Sub<!-- --> with X</p>
     R.append(("re", r'<h2>Next Project</h2><p>[^<]*</p>(?:<p>(?:[^<]|<!-- -->)*</p>)?'
-                    r'<a type="button" aria-label="Continue to next project: [^"]*" href="/work/[^"]*">',
-                    f'<h2>Next Project</h2><p>{nx}</p>'
-                    f'<a type="button" aria-label="Continue to next project: {nx}" href="/work/{next_slug}">'))
+                    r'<a type="button" aria-label="Continue to next project: [^"]*" href="/work/[^"]*">Continue</a>',
+                    f'<h2>Prossimo servizio</h2><p>{nx}</p>'
+                    f'<a type="button" aria-label="Continua al prossimo servizio: {nx}" href="/work/{next_slug}">Continua</a>'))
     # description: anchored span. Use [^<]*? (not .*?) so a match starting in the
     # truncated <meta> can't cross tag boundaries and swallow the <h1> in between.
     R.append(("re", re.escape(d_start) + r"[^<]*?" + re.escape(d_end), new_desc))
@@ -270,17 +284,60 @@ def build_repls(slug, old_title, dom_raw, d_start, d_end, oldmap, next_slug):
     # rimuovi isRelatedTo -> Product "Cruitive" (prodotto Shader), forma oggetto ed escapata
     R.append(("lit", ',"isRelatedTo":[{"@type":"Product","name":"Cruitive","url":"https://www.cruitive.com"}]', ""))
     R.append(("lit", r',\"isRelatedTo\":[{\"@type\":\"Product\",\"name\":\"Cruitive\",\"url\":\"https://www.cruitive.com\"}]', ""))
+    # ===== slug shader -> slug BZN15. ULTIMI della lista: fix_itemlist e
+    # fix_related_descriptions (sopra) indicizzano CARDMAP coi VECCHI slug.
+    # Due forme, disgiunte tra loro: il path /work/<old> (url, href, canonical,
+    # og:url, JSON-LD) e il bare slug come STRINGA JSON completa a ogni livello
+    # di escaping ("<old>" / \"<old>\"): copre uid, projectIds e il router state
+    # del flight (["uid","<old>","d"], "c":["","work","<old>"]). I chunk JS non
+    # contengono slug (verificato), quindi la rinomina coerente non rompe nulla.
+    for sl in KEEP:
+        R.append(("lit", f"/work/{sl}", f"/work/{SLUG[sl]}"))
+        R.append(("re", bs + '"' + re.escape(sl) + r'\1"',
+                         r'\g<1>"' + SLUG[sl] + r'\g<1>"'))
+    # ===== purga residui Shader (Article JSON-LD, media case-study, mux remoto) =====
+    # headline "<titolo> – <descrittore progetto shader>" -> solo titolo
+    R.append(("re", bs + r'"headline\1":\1"[^"\\]*\1"',
+                     r'\g<1>"headline\g<1>":\g<1>"' + new_title + r'\g<1>"'))
+    # url dell'Article -> pagina canonica (unico https esterno residuo nelle pagine;
+    # gli altri campi url sono gia' bzn15 o path relativi)
+    R.append(("re", bs + r'"url\1":\1"https://(?!bzn15\.it)[^"\\]*\1"',
+                     r'\g<1>"url\g<1>":\g<1>"https://bzn15.it/work/' + SLUG[slug] + r'\g<1>"'))
+    # contentUrl del VideoObject: stream.mux.com -> mirror locale
+    R.append(("lit", "https://stream.mux.com/", "https://bzn15.it/mux/"))
+    # media case-study (clip dei progetti shader) -> il video del servizio
+    # stesso: ogni oggetto progetto ha il proprio mux_playback_id pochi campi
+    # prima, lo si riusa via backreference (niente mappa esterna). Il gruppo
+    # \3 in mezzo non puo' attraversare parentesi (resta nello stesso oggetto).
+    R.append(("re", bs + r'"mux_playback_id\1":\1"([A-Za-z0-9]+)\1"([^\[\]{}]*?)"project_media\1":\[[^\]]*\]',
+                     r'\g<1>"mux_playback_id\g<1>":\g<1>"\g<2>\g<1>"\g<3>'
+                     r'"project_media\g<1>":[{\g<1>"mux_playback_id\g<1>":\g<1>"\g<2>\g<1>"}]'))
+    # rete di sicurezza: un array rimasto multi-item (oggetto con forma diversa,
+    # non riscritto sopra) conterrebbe ancora clip shader -> svuotato
+    R.append(("re", bs + r'"project_media\1":\[[^\]]*,[^\]]*\]',
+                     r'\g<1>"project_media\g<1>":[]'))
+    # ===== route /work -> /servizi (SEMPRE ULTIMA: riscrive anche gli href
+    # appena prodotti dalle regex sopra). Tre forme: path (/work/ e /work a fine
+    # url tipo breadcrumb "@id"), router state RSC (["","work","<slug>"] e
+    # ["work",{"children":...]) e nome breadcrumb "Work".
+    R.append(("re", r'/work(?=[/\\"])', "/servizi"))
+    R.append(("re", bs + r'"work\1"', r'\g<1>"servizi\g<1>"'))
+    R.append(("re", bs + r'"name\1":\1"Work\1"', r'\g<1>"name\g<1>":\g<1>"Servizi\g<1>"'))
     return R
 
 # ---------- structural buffer ops (run after the textual repls) ----------
 def fix_structure(buf, slug):
-    # ica-nissen: replace the whole nextProject object with the REAL (rebranded)
-    # ehealth-arena object from this page's own related array
-    if slug == "ica-nissen":
+    # pagine con catena next reindirizzata (NEXT_OVERRIDE): il nextProject del
+    # flight punta ancora al target shader originale -> si sostituisce l'INTERO
+    # oggetto col target REALE (gia' rebrandato) copiato dal related array della
+    # pagina, cosi' uid/url/title/media restano coerenti. Gli uid sono gia'
+    # BZN15: fix_structure gira DOPO edit_buffer, quindi dopo la rinomina slug.
+    if slug in NEXT_OVERRIDE:
+        target = SLUG[NEXT_OVERRIDE[slug]]
         i = buf.find('"nextProject":{')
         st, en = obj_span(buf, i + len('"nextProject":'))
-        j = buf.find('{"uid":"ehealth-arena"')
-        assert 0 <= j < st, "related ehealth-arena object not found before nextProject"
+        j = buf.find('{"uid":"' + target + '"')
+        assert 0 <= j < st, f"related {target} object not found before nextProject"
         rst, ren = obj_span(buf, j)
         buf = buf[:st] + buf[rst:ren] + buf[en:]
     # drop the 3 removed projects from the related carousel
@@ -288,14 +345,60 @@ def fix_structure(buf, slug):
         buf = drop_obj(buf, r)
     # and from projectIds (always listed last, contiguously)
     buf = buf.replace(',"norrkopings-hamn","heip","design-is-funny"', "")
-    return buf
+    # ordine canonico del carosello (sviluppo-software-e-saas per primo)
+    return reorder_projects(buf)
 
-NEXT_OVERRIDE = {"ica-nissen": "ehealth-arena"}   # closes the 8-page cycle
+# ordine del carosello (fase 7, scelto dall'utente): Sviluppo, Cybersecurity,
+# Governance, Infrastrutture, Reti, Gestione, Impiantistica, Formazione.
+ORDER = ["alamance-foods", "ehealth-arena", "select-concept", "gamily",
+         "son", "glasbolaget", "spp-dream-generator", "ica-nissen"]
+
+# La catena "Prossimo servizio" segue l'ordine del carosello (ciclica). Dove
+# diverge dal nextProject originale shader (catena orig: ehealth->select->
+# gamily->alamance->son->glasbolaget->spp->ica) serve l'override, che in
+# fix_structure sostituisce l'INTERO oggetto nextProject del flight.
+NEXT_OVERRIDE = {
+    "alamance-foods": "ehealth-arena",   # svil -> cyber (orig: -> son)
+    "gamily": "son",                     # infra -> reti (orig: -> alamance)
+    "ica-nissen": "alamance-foods",      # form -> svil, chiude il ciclo
+}
+# rank per vecchio E nuovo slug (serve in stadi diversi della pipeline)
+RANK = {s: i for i, s in enumerate(ORDER)}
+RANK.update({SLUG[s]: i for i, s in enumerate(ORDER)})
+
+def reorder_projects(buf):
+    """Riordina l'array "projects" (per uid) e "projectIds" secondo ORDER.
+    Gira DOPO la rinomina slug, quindi cerca gli uid NUOVI. No-op se l'array
+    non contiene esattamente gli 8 kept (pagine future-proof)."""
+    order_new = [SLUG[s] for s in ORDER]
+    i = buf.find('"projects":[')
+    if i >= 0:
+        st = i + len('"projects":')
+        objs, pos, end = {}, st + 1, None
+        while pos < len(buf) and buf[pos] == "{":
+            ost, oen = obj_span(buf, pos)
+            o = buf[ost:oen]
+            m = re.search(r'"uid":"([a-z0-9-]+)"', o)
+            if m:
+                objs[m.group(1)] = o
+            pos = oen + 1 if oen < len(buf) and buf[oen] == "," else oen
+            if pos < len(buf) and buf[pos] == "]":
+                end = pos + 1
+                break
+        if end and set(objs) == set(order_new):
+            buf = buf[:st] + "[" + ",".join(objs[u] for u in order_new) + "]" + buf[end:]
+    m = re.search(r'"projectIds":\[("[a-z0-9-]+"(?:,"[a-z0-9-]+")*)\]', buf)
+    if m:
+        ids = re.findall(r'"([a-z0-9-]+)"', m.group(1))
+        if set(ids) == set(order_new):
+            buf = (buf[:m.start()] + '"projectIds":['
+                   + ",".join(f'"{u}"' for u in order_new) + "]" + buf[m.end():])
+    return buf
 
 def main():
     oldmap = old_titles()
     for slug in KEEP:
-        p = os.path.join(ROOT, "work", slug)
+        p = page_dir(slug)
         orig = open(os.path.join(p, "index.html.orig"), encoding="utf-8").read()
         old_title, dom_raw, d_start, d_end = extract_old(orig)
         next_slug = re.search(r'nextProject\\":\{\\"uid\\":\\"([a-z-]+)', orig).group(1)
